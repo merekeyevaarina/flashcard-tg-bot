@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProgressStatus {
+  LIKED
+  REVIEW
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  telegramId    String         @unique @map("telegram_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  userQuestions UserQuestion[]
+
+  @@map("users")
+}
+
+model Question {
+  id            Int            @id @default(autoincrement())
+  question      String
+  answer        String
+  createdAt     DateTime       @default(now()) @map("created_at")
+  userQuestions UserQuestion[]
+
+  @@map("questions")
+}
+
+model UserQuestion {
+  userId     Int            @map("user_id")
+  questionId Int            @map("question_id")
+  status     ProgressStatus
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, questionId])
+  @@index([userId, status])
+  @@map("user_questions")
+}
