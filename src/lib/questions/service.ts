@@ -5,7 +5,10 @@ export async function getQuestionById(id: number) {
     return findQuestionById(id);
 }
 
-export async function selectNextQuestion(userId: number) {
+export async function selectNextQuestion(
+    userId: number,
+    excludeQuestionId?: number,
+) {
     const [questions, progress] = await Promise.all([
         findAllQuestions(),
         getUserProgress(userId),
@@ -23,9 +26,15 @@ export async function selectNextQuestion(userId: number) {
         return { status: "complete" as const };
     }
 
+    const alternativeQuestions = availableQuestions.filter(
+        ({ id }) => id !== excludeQuestionId,
+    );
+    const candidates =
+        alternativeQuestions.length > 0 ? alternativeQuestions : availableQuestions;
+
     const reviewIds = new Set(progress.reviewQuestionIds);
-    const reviewQuestions = availableQuestions.filter(({ id }) => reviewIds.has(id));
-    const questionPool = reviewQuestions.length > 0 ? reviewQuestions : availableQuestions;
+    const newQuestions = candidates.filter(({ id }) => !reviewIds.has(id));
+    const questionPool = newQuestions.length > 0 ? newQuestions : candidates;
     const question = questionPool[Math.floor(Math.random() * questionPool.length)];
 
     return {

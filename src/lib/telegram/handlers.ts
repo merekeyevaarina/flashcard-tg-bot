@@ -47,8 +47,13 @@ export function registerHandlers(bot: Bot): void {
         await ctx.answerCallbackQuery(
             reaction === "like"
                 ? "Лайк сохранён."
-                : "Вопрос повторится при следующем /start.",
+                : "Вопрос добавлен в очередь на повтор.",
         );
         await revealAnswer(ctx, question);
+    });
+
+    bot.callbackQuery(/^next:(\d+)$/, async (ctx) => {
+        await ctx.answerCallbackQuery();
+        await sendNextFlashcard(ctx);
     });
 }
