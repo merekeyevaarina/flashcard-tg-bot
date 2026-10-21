@@ -1,12 +1,16 @@
 services:
-  - type: worker
+  - type: web
     name: flashcard-bot
     runtime: node
-    numInstances: 1
+    plan: free
+    region: frankfurt
     buildCommand: npm ci && npm run build
     startCommand: npm start
+    healthCheckPath: /health
     envVars:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: DATABASE_URL
         sync: false
+      - key: WEBHOOK_SECRET
+        generateValue: true
