@@ -1,7 +1,58 @@
-import { InlineKeyboard } from "grammy";
 import type { Context } from "grammy";
 import { markQuestionPresentedAgain } from "../progress/service";
 import { selectNextQuestion } from "../questions/service";
+
+type InputRichMessage = Parameters<Context["replyWithRichMessage"]>[0];
+
+function questionCard(question: { id: number; question: string }): InputRichMessage {
+    return {
+        blocks: [
+            { type: "heading", size: 3, text: "🧠 Карточка" },
+            { type: "paragraph", text: question.question },
+            {
+                type: "buttons",
+                buttons: [
+                    {
+                        text: "👍 Лайк",
+                        callback_data: `like:${question.id}`,
+                        style: "success",
+                    },
+                    {
+                        text: "👎 Дизлайк",
+                        callback_data: `dislike:${question.id}`,
+                        style: "danger",
+                    },
+                ],
+            },
+        ],
+    };
+}
+
+function answerCard(question: {
+    id: number;
+    question: string;
+    answer: string;
+}): InputRichMessage {
+    return {
+        blocks: [
+            { type: "heading", size: 4, text: "Вопрос" },
+            { type: "paragraph", text: question.question },
+            { type: "divider" },
+            { type: "heading", size: 3, text: "✅ Правильный ответ" },
+            { type: "paragraph", text: question.answer },
+            {
+                type: "buttons",
+                buttons: [
+                    {
+                        text: "➡️ Следующий вопрос",
+                        callback_data: `next:${question.id}`,
+                        style: "primary",
+                    },
+                ],
+            },
+        ],
+    };
+}
 
 export async function sendNextFlashcard(ctx: Context): Promise<void> {
     const userId = ctx.from?.id;
@@ -41,14 +92,12 @@ export async function sendNextFlashcard(ctx: Context): Promise<void> {
     }
 
     const { question, isReview } = selection;
-    const keyboard = new InlineKeyboard()
-        .text("👍 Лайк", `like:${question.id}`)
-        .text("👎 Дизлайк", `dislike:${question.id}`);
-
     if (nextCallbackMatch) {
-        await ctx.editMessageText(question.question, { reply_markup: keyboard });
+        await ctx.editMessageText(questionCard(question), {
+            reply_markup: { inline_keyboard: [] },
+        });
     } else {
-        await ctx.reply(question.question, { reply_markup: keyboard });
+        await ctx.replyWithRichMessage(questionCard(question));
     }
 
     if (isReview) {
@@ -60,13 +109,7 @@ export async function revealAnswer(
     ctx: Context,
     question: { id: number; question: string; answer: string },
 ): Promise<void> {
-    const keyboard = new InlineKeyboard().text(
-        "➡️ Следующий вопрос",
-        `next:${question.id}`,
-    );
-
-    await ctx.editMessageText(
-        `${question.question}\n\n✅ Правильный ответ:\n${question.answer}`,
-        { reply_markup: keyboard },
-    );
+    await ctx.editMessageText(answerCard(question), {
+        reply_markup: { inline_keyboard: [] },
+    });
 }
