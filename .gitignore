@@ -13,12 +13,9 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
-
 # production
 /build
+/dist
 
 # misc
 .DS_Store
@@ -36,18 +33,12 @@ yarn-error.log*
 /.bot-data/
 /prisma/dev.db*
 
-# vercel
-.vercel
-
 # typescript
 *.tsbuildinfo
+.next/
+.open-next/
+.wrangler/
 next-env.d.ts
 .neon
-
-# OpenNext
-.open-next
-
-# wrangler files
-.wrangler
 .dev.vars*
 !.dev.vars.example

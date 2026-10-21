@@ -1,0 +1,12 @@
+services:
+  - type: worker
+    name: flashcard-bot
+    runtime: node
+    numInstances: 1
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        sync: false

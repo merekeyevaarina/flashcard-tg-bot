@@ -3,46 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "next build",
-    "bot": "tsx bot-dev.ts",
-    "bot:webhook:set": "tsx set-telegram-webhook.ts",
-    "prebot": "prisma migrate deploy && prisma db seed",
+    "dev": "tsx watch bot.ts",
+    "build": "prisma generate",
+    "start": "npm run db:deploy && npm run bot",
+    "bot": "tsx bot.ts",
+    "db:deploy": "prisma migrate deploy && prisma db seed",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio",
-    "dev": "next dev",
-    "start": "next start",
-    "lint": "eslint",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
+    "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@neon/config": "^1.9.2",
-    "@neon/env": "^1.6.3",
-    "@next/env": "^16.4.2",
-    "@opennextjs/cloudflare": "^1.20.12",
     "@prisma/adapter-neon": "^6.19.3",
     "@prisma/client": "^6.19.3",
     "dotenv": "^18.0.8",
     "grammy": "^1.46.0",
-    "next": "16.4.2",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
-    "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.2",
-    "prisma": "^6.19.3",
-    "tailwindcss": "^4",
-    "tsx": "^4.23.15",
-    "typescript": "^5",
-    "wrangler": "^4.151.2"
+    "typescript": "^5"
   }
 }

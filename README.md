@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Flashcard Telegram Bot
 
-## Getting Started
+Telegram-бот изучает вопросы из PostgreSQL и хранит прогресс пользователей. Он получает обновления через long polling и запускается как постоянный Render Background Worker.
 
-First, run the development server:
+## Деплой на Render
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+В корне проекта есть `render.yaml` для создания Background Worker через Render Blueprint. Подключите репозиторий к Render и задайте переменные окружения:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- `TELEGRAM_BOT_TOKEN` — токен бота от BotFather.
+- `DATABASE_URL` — строка подключения к Neon PostgreSQL, используемая Prisma.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Команда запуска сначала применяет миграции и загружает начальные карточки, затем запускает бота. grammY удаляет webhook перед началом polling. В Blueprint настроен один экземпляр: Telegram не позволяет одновременно получать обновления одного бота несколькими poller-процессами.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Локальный запуск
 
-## Learn More
+1. Установите Node.js 20 или новее.
+2. Скопируйте `.env.example` в `.env` и заполните обе переменные.
+3. Установите зависимости: `npm ci`.
+4. Сгенерируйте Prisma Client: `npm run db:generate`.
+5. Запустите бота с миграциями и начальными карточками: `npm start`.
 
-To learn more about Next.js, take a look at the following resources:
+Для локальной разработки с автоматическим перезапуском используйте `npm run dev` (сначала подготовьте базу и запустите миграции).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Основные команды
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run build` — сгенерировать Prisma Client.
+- `npm run db:deploy` — применить миграции и загрузить карточки.
+- `npm run db:migrate` — создать/применить миграции в локальной разработке.
+- `npm run db:studio` — открыть Prisma Studio.
