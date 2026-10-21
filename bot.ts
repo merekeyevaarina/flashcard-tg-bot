@@ -23,13 +23,6 @@ bot.catch(({ ctx, error }) => {
 async function startBot(): Promise<void> {
     await bot.init();
 
-    const username = bot.botInfo.username;
-    if (username.toLowerCase() !== "richtextbot") {
-        throw new Error(
-            `TELEGRAM_BOT_TOKEN принадлежит @${username}; для этого приложения нужен токен @RichTextBot.`,
-        );
-    }
-
     await bot.start({
         onStart: (botInfo) => {
             console.log(`Бот @${botInfo.username} запущен через long polling.`);
