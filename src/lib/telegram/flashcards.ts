@@ -1,57 +1,21 @@
+import { InlineKeyboard } from "grammy";
 import type { Context } from "grammy";
 import { markQuestionPresentedAgain } from "../progress/service";
 import { selectNextQuestion } from "../questions/service";
 
-type InputRichMessage = Parameters<Context["replyWithRichMessage"]>[0];
-
-function questionCard(question: { id: number; question: string }): InputRichMessage {
-    return {
-        blocks: [
-            { type: "heading", size: 3, text: "🧠 Карточка" },
-            { type: "paragraph", text: question.question },
-            {
-                type: "buttons",
-                buttons: [
-                    {
-                        text: "👍 Лайк",
-                        callback_data: `like:${question.id}`,
-                        style: "success",
-                    },
-                    {
-                        text: "👎 Дизлайк",
-                        callback_data: `dislike:${question.id}`,
-                        style: "danger",
-                    },
-                ],
-            },
-        ],
-    };
+function escapeHtml(text: string): string {
+    return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
 }
 
-function answerCard(question: {
-    id: number;
-    question: string;
-    answer: string;
-}): InputRichMessage {
-    return {
-        blocks: [
-            { type: "heading", size: 4, text: "Вопрос" },
-            { type: "paragraph", text: question.question },
-            { type: "divider" },
-            { type: "heading", size: 3, text: "✅ Правильный ответ" },
-            { type: "paragraph", text: question.answer },
-            {
-                type: "buttons",
-                buttons: [
-                    {
-                        text: "➡️ Следующий вопрос",
-                        callback_data: `next:${question.id}`,
-                        style: "primary",
-                    },
-                ],
-            },
-        ],
-    };
+function formatQuestion(question: string): string {
+    return `<b>${escapeHtml(question)}</b>`;
+}
+
+function formatAnswer(question: string, answer: string): string {
+    return `${formatQuestion(question)}\n\n✅ Правильный ответ:\n<i>${escapeHtml(answer)}</i>`;
 }
 
 export async function sendNextFlashcard(ctx: Context): Promise<void> {
@@ -92,12 +56,20 @@ export async function sendNextFlashcard(ctx: Context): Promise<void> {
     }
 
     const { question, isReview } = selection;
+    const keyboard = new InlineKeyboard()
+        .text("👍 Лайк", `like:${question.id}`)
+        .text("👎 Дизлайк", `dislike:${question.id}`);
+
     if (nextCallbackMatch) {
-        await ctx.editMessageText(questionCard(question), {
-            reply_markup: { inline_keyboard: [] },
+        await ctx.editMessageText(formatQuestion(question.question), {
+            parse_mode: "HTML",
+            reply_markup: keyboard,
         });
     } else {
-        await ctx.replyWithRichMessage(questionCard(question));
+        await ctx.reply(formatQuestion(question.question), {
+            parse_mode: "HTML",
+            reply_markup: keyboard,
+        });
     }
 
     if (isReview) {
@@ -109,7 +81,13 @@ export async function revealAnswer(
     ctx: Context,
     question: { id: number; question: string; answer: string },
 ): Promise<void> {
-    await ctx.editMessageText(answerCard(question), {
-        reply_markup: { inline_keyboard: [] },
-    });
+    const keyboard = new InlineKeyboard().text(
+        "➡️ Следующий вопрос",
+        `next:${question.id}`,
+    );
+
+    await ctx.editMessageText(
+        formatAnswer(question.question, question.answer),
+        { parse_mode: "HTML", reply_markup: keyboard },
+    );
 }
