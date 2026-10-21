@@ -3,6 +3,12 @@ import { loadEnvConfig } from "@next/env";
 async function startBot(): Promise<void> {
     loadEnvConfig(process.cwd());
 
+    if (process.env.TELEGRAM_WEBHOOK_URL) {
+        throw new Error(
+            "TELEGRAM_WEBHOOK_URL настроен. Для этого бота используйте Cloudflare webhook, а не локальный polling.",
+        );
+    }
+
     const { bot } = await import("./src/lib/telegram/bot");
 
     await bot.start({

@@ -7,6 +7,6 @@ if (!token) {
     throw new Error("TELEGRAM_BOT_TOKEN не найден");
 }
 
-export const bot = new Bot(token);
+export const bot = new Bot(token,{  client: { timeoutSeconds: 5, },});
 
 registerHandlers(bot);
