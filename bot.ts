@@ -96,14 +96,14 @@ async function startBot(): Promise<void> {
     });
 
     try {
-        const botInfo = await bot.init();
+        await bot.init();
         await bot.api.setWebhook(`${publicUrl}${webhookPath}`, {
             secret_token: webhookSecret,
             allowed_updates: ["message", "callback_query"],
         });
 
         console.log(
-            `Бот @${botInfo.username} запущен через webhook на порту ${port}.`,
+            `Бот @${bot.botInfo.username} запущен через webhook на порту ${port}.`,
         );
     } catch (error) {
         await closeServer();
