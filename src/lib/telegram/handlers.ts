@@ -1,13 +1,11 @@
 import type { Bot } from "grammy";
 import { dislikeQuestion, likeQuestion } from "../progress/service";
 import { getQuestionById } from "../questions/service";
-import { revealAnswer, sendNextFlashcard } from "./flashcards";
+import { revealAnswer, sendNextFlashcard, sendWelcome } from "./flashcards";
 
 export function registerHandlers(bot: Bot): void {
     bot.command("start", async (ctx) => {
-        await ctx.reply(
-            "Привет! 👋\n\nДавай изучать IT по карточкам. Вопросы будут появляться случайно.",
-        );
+        await sendWelcome(ctx);
         await sendNextFlashcard(ctx);
     });
 
@@ -19,6 +17,7 @@ export function registerHandlers(bot: Bot): void {
         }
 
         const [, reaction, questionIdValue] = match;
+        const action = reaction === "like" ? "like" : "dislike";
         const question = await getQuestionById(Number(questionIdValue));
         if (!question) {
             await ctx.answerCallbackQuery("Этот вопрос больше недоступен.");
@@ -32,7 +31,7 @@ export function registerHandlers(bot: Bot): void {
         }
 
         try {
-            if (reaction === "like") {
+            if (action === "like") {
                 await likeQuestion(userId, question.id);
             } else {
                 await dislikeQuestion(userId, question.id);
@@ -45,11 +44,11 @@ export function registerHandlers(bot: Bot): void {
         }
 
         await ctx.answerCallbackQuery(
-            reaction === "like"
+            action === "like"
                 ? "Лайк сохранён."
                 : "Вопрос добавлен в очередь на повтор.",
         );
-        await revealAnswer(ctx, question);
+        await revealAnswer(ctx, question, action);
     });
 
     bot.callbackQuery(/^next:(\d+)$/, async (ctx) => {

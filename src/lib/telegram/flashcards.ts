@@ -1,21 +1,114 @@
-import { InlineKeyboard } from "grammy";
 import type { Context } from "grammy";
+import type { InputRichMessage } from "grammy/types";
 import { markQuestionPresentedAgain } from "../progress/service";
 import { selectNextQuestion } from "../questions/service";
 
-function escapeHtml(text: string): string {
-    return text
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;");
+type Flashcard = { id: number; question: string; answer: string };
+type Reaction = "like" | "dislike";
+
+function renderQuestion(question: Flashcard): InputRichMessage {
+    return {
+        blocks: [
+            { type: "heading", size: 3, text: "🎴 IT-карточка" },
+            { type: "paragraph", text: question.question },
+            { type: "divider" },
+            { type: "footer", text: "Вспомни ответ и выбери оценку" },
+            {
+                type: "buttons",
+                align: "center",
+                buttons: [
+                    {
+                        text: "👍 Знаю",
+                        style: "success",
+                        callback_data: `like:${question.id}`,
+                    },
+                    {
+                        text: "🔁 Повторить",
+                        style: "primary",
+                        callback_data: `dislike:${question.id}`,
+                    },
+                ],
+            },
+        ],
+    };
 }
 
-function formatQuestion(question: string): string {
-    return `<b>${escapeHtml(question)}</b>`;
+function renderAnswer(question: Flashcard, reaction: Reaction): InputRichMessage {
+    const feedback =
+        reaction === "like"
+            ? "✅ Отмечено как знакомое"
+            : "🔁 Карточка вернётся на повтор";
+
+    return {
+        blocks: [
+            { type: "heading", size: 3, text: "💡 Разбор" },
+            {
+                type: "paragraph",
+                text: { type: "bold", text: question.question },
+            },
+            { type: "blockquote", blocks: [{ type: "paragraph", text: question.answer }] },
+            { type: "divider" },
+            { type: "footer", text: feedback },
+            {
+                type: "buttons",
+                align: "center",
+                buttons: [
+                    {
+                        text: "➡️ Следующая карточка",
+                        style: "primary",
+                        callback_data: `next:${question.id}`,
+                    },
+                ],
+            },
+        ],
+    };
 }
 
-function formatAnswer(question: string, answer: string): string {
-    return `${formatQuestion(question)}\n\n✅ Правильный ответ:\n<i>${escapeHtml(answer)}</i>`;
+function renderStatus(
+    title: string,
+    message: string,
+    footer: string,
+): InputRichMessage {
+    return {
+        blocks: [
+            { type: "heading", size: 3, text: title },
+            { type: "paragraph", text: message },
+            { type: "divider" },
+            { type: "footer", text: footer },
+        ],
+    };
+}
+
+async function updateCardMessage(
+    ctx: Context,
+    message: InputRichMessage,
+    isCallbackUpdate: boolean,
+): Promise<void> {
+    if (isCallbackUpdate) {
+        await ctx.editMessageText(message, {
+            // Remove the legacy inline keyboard when updating a card sent before Rich Messages.
+            reply_markup: { inline_keyboard: [] },
+        });
+    } else {
+        await ctx.replyWithRichMessage(message);
+    }
+}
+
+export async function sendWelcome(ctx: Context): Promise<void> {
+    await ctx.replyWithRichMessage({
+        blocks: [
+            { type: "heading", size: 2, text: "🧠 IT-карточки" },
+            {
+                type: "paragraph",
+                text: "Короткая практика, чтобы закрепить знания в программировании и технологиях.",
+            },
+            { type: "divider" },
+            {
+                type: "footer",
+                text: "Вспомни ответ, затем отметь: знаешь его или хочешь повторить.",
+            },
+        ],
+    });
 }
 
 export async function sendNextFlashcard(ctx: Context): Promise<void> {
@@ -32,45 +125,33 @@ export async function sendNextFlashcard(ctx: Context): Promise<void> {
     const selection = await selectNextQuestion(userId, excludeQuestionId);
 
     if (selection.status === "empty") {
-        const message = "Пока нет карточек. Добавьте вопросы в базу данных.";
-        if (nextCallbackMatch) {
-            await ctx.editMessageText(message, {
-                reply_markup: { inline_keyboard: [] },
-            });
-        } else {
-            await ctx.reply(message);
-        }
+        await updateCardMessage(
+            ctx,
+            renderStatus(
+                "🗂 Пока пусто",
+                "В этой колоде ещё нет карточек.",
+                "Добавьте вопросы в базу данных, и можно начинать.",
+            ),
+            Boolean(nextCallbackMatch),
+        );
         return;
     }
 
     if (selection.status === "complete") {
-        const message = "Вы отметили лайком все вопросы. Отличная работа! 🎉";
-        if (nextCallbackMatch) {
-            await ctx.editMessageText(message, {
-                reply_markup: { inline_keyboard: [] },
-            });
-        } else {
-            await ctx.reply(message);
-        }
+        await updateCardMessage(
+            ctx,
+            renderStatus(
+                "🎉 Отличная работа!",
+                "Вы отметили лайком все вопросы.",
+                "Загляните позже — карточки для повторения появятся снова.",
+            ),
+            Boolean(nextCallbackMatch),
+        );
         return;
     }
 
     const { question, isReview } = selection;
-    const keyboard = new InlineKeyboard()
-        .text("👍 Лайк", `like:${question.id}`)
-        .text("👎 Дизлайк", `dislike:${question.id}`);
-
-    if (nextCallbackMatch) {
-        await ctx.editMessageText(formatQuestion(question.question), {
-            parse_mode: "HTML",
-            reply_markup: keyboard,
-        });
-    } else {
-        await ctx.reply(formatQuestion(question.question), {
-            parse_mode: "HTML",
-            reply_markup: keyboard,
-        });
-    }
+    await updateCardMessage(ctx, renderQuestion(question), Boolean(nextCallbackMatch));
 
     if (isReview) {
         await markQuestionPresentedAgain(userId, question.id);
@@ -79,15 +160,8 @@ export async function sendNextFlashcard(ctx: Context): Promise<void> {
 
 export async function revealAnswer(
     ctx: Context,
-    question: { id: number; question: string; answer: string },
+    question: Flashcard,
+    reaction: Reaction,
 ): Promise<void> {
-    const keyboard = new InlineKeyboard().text(
-        "➡️ Следующий вопрос",
-        `next:${question.id}`,
-    );
-
-    await ctx.editMessageText(
-        formatAnswer(question.question, question.answer),
-        { parse_mode: "HTML", reply_markup: keyboard },
-    );
+    await updateCardMessage(ctx, renderAnswer(question, reaction), true);
 }
