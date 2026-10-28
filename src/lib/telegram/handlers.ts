@@ -2,6 +2,9 @@ import type { Bot } from "grammy";
 import { dislikeQuestion, likeQuestion } from "../progress/service";
 import { getQuestionById } from "../questions/service";
 import {revealAnswer, sendModeMenu, sendNextFlashcard, sendWelcome} from "./flashcards";
+import { getRandomTestQuestions } from "../questions/test-service";
+
+
 
 export function registerHandlers(bot: Bot): void {
     bot.command("start", async (ctx) => {
@@ -65,6 +68,17 @@ export function registerHandlers(bot: Bot): void {
     bot.callbackQuery("mode:tests", async (ctx) => {
         await ctx.answerCallbackQuery();
 
-        await ctx.reply("📝 Режим тестов. Скоро начнём!");
+        const questions = await getRandomTestQuestions(20);
+
+        if (questions.length === 0) {
+            await ctx.reply("В базе пока нет тестовых вопросов.");
+            return;
+        }
+
+        await ctx.reply(
+            `📝 База подключена!\n\nНайдено вопросов для теста: ${questions.length}.\n\nПервый вопрос:\n${questions[0].question}`,
+        );
     });
+
+
 }
