@@ -1,7 +1,7 @@
 import type { Bot } from "grammy";
 import { dislikeQuestion, likeQuestion } from "../progress/service";
 import { getQuestionById } from "../questions/service";
-import { revealAnswer, sendModeMenu, sendNextFlashcard } from "./flashcards";
+import {revealAnswer, sendModeMenu, sendNextFlashcard, sendWelcome} from "./flashcards";
 
 export function registerHandlers(bot: Bot): void {
     bot.command("start", async (ctx) => {
@@ -53,5 +53,18 @@ export function registerHandlers(bot: Bot): void {
     bot.callbackQuery(/^next:(\d+)$/, async (ctx) => {
         await ctx.answerCallbackQuery();
         await sendNextFlashcard(ctx);
+    });
+
+    bot.callbackQuery("mode:flashcards", async (ctx) => {
+        await ctx.answerCallbackQuery();
+
+        await sendWelcome(ctx);
+        await sendNextFlashcard(ctx);
+    });
+
+    bot.callbackQuery("mode:tests", async (ctx) => {
+        await ctx.answerCallbackQuery();
+
+        await ctx.reply("📝 Режим тестов. Скоро начнём!");
     });
 }
