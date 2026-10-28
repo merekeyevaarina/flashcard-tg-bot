@@ -1,12 +1,11 @@
 import type { Bot } from "grammy";
 import { dislikeQuestion, likeQuestion } from "../progress/service";
 import { getQuestionById } from "../questions/service";
-import { revealAnswer, sendNextFlashcard, sendWelcome } from "./flashcards";
+import { revealAnswer, sendModeMenu, sendNextFlashcard } from "./flashcards";
 
 export function registerHandlers(bot: Bot): void {
     bot.command("start", async (ctx) => {
-        await sendWelcome(ctx);
-        await sendNextFlashcard(ctx);
+        await sendModeMenu(ctx);
     });
 
     bot.callbackQuery(/^(like|dislike):(\d+)$/, async (ctx) => {

@@ -1,4 +1,4 @@
-
+import { testQuestions } from "../src/lib/questions/test-seed-data";
 import { PrismaClient } from "@prisma/client";
 import { questions } from "../src/lib/questions/seed-data";
 
@@ -27,6 +27,26 @@ async function main() {
     }
 
     console.log(`Загружено вопросов: ${questions.length}`);
+
+
+    for (const item of testQuestions) {
+        await prisma.testQuestion.upsert({
+            where: {
+                question: item.question,
+            },
+            update: {
+                options: item.options,
+                correctOption: item.correctOption,
+            },
+            create: {
+                question: item.question,
+                options: item.options,
+                correctOption: item.correctOption,
+            },
+        });
+    }
+
+    console.log(`Загружено тестовых вопросов: ${testQuestions.length}`);
 }
 
 main()

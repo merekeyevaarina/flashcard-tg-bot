@@ -165,3 +165,34 @@ export async function revealAnswer(
 ): Promise<void> {
     await updateCardMessage(ctx, renderAnswer(question, reaction), true);
 }
+export async function sendModeMenu(ctx: Context): Promise<void> {
+    await ctx.replyWithRichMessage({
+        blocks: [
+            {
+                type: "heading",
+                size: 2,
+                text: "🧠 IT-помощник",
+            },
+            {
+                type: "paragraph",
+                text: "Выбери режим обучения:",
+            },
+            {
+                type: "buttons",
+                align: "center",
+                buttons: [
+                    {
+                        text: "🎴 Карточки",
+                        style: "primary",
+                        callback_data: "mode:flashcards",
+                    },
+                    {
+                        text: "📝 Тесты",
+                        style: "success",
+                        callback_data: "mode:tests",
+                    },
+                ],
+            },
+        ],
+    });
+}

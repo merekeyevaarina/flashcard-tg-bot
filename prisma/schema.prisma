@@ -43,3 +43,13 @@ model UserQuestion {
   @@index([userId, status])
   @@map("user_questions")
 }
+
+model TestQuestion {
+  id            Int      @id @default(autoincrement())
+  question      String   @unique
+  options       Json
+  correctOption String   @map("correct_option")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("test_questions")
+}
