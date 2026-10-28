@@ -65,6 +65,7 @@ export function registerHandlers(bot: Bot): void {
         await sendNextFlashcard(ctx);
     });
 
+
     bot.callbackQuery("mode:tests", async (ctx) => {
         await ctx.answerCallbackQuery();
 
@@ -75,10 +76,47 @@ export function registerHandlers(bot: Bot): void {
             return;
         }
 
+        const question = questions[0];
+        const options = question.options;
+
+        if (!Array.isArray(options) || !options.every(
+            (option) => typeof option === "string",
+        )) {
+            await ctx.reply("Ошибка: варианты ответов заполнены неверно.");
+            return;
+        }
+
         await ctx.reply(
-            `📝 База подключена!\n\nНайдено вопросов для теста: ${questions.length}.\n\nПервый вопрос:\n${questions[0].question}`,
+            `📝 Вопрос 1 из ${questions.length}\n\n${question.question}\n\n${options.join("\n")}`,
+            {
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: "А",
+                                callback_data: `test-answer:${question.id}:0`,
+                            },
+                            {
+                                text: "Б",
+                                callback_data: `test-answer:${question.id}:1`,
+                            },
+                        ],
+                        [
+                            {
+                                text: "В",
+                                callback_data: `test-answer:${question.id}:2`,
+                            },
+                            {
+                                text: "Г",
+                                callback_data: `test-answer:${question.id}:3`,
+                            },
+                        ],
+                    ],
+                },
+            },
         );
     });
+
 
 
 }
