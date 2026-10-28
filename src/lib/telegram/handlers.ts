@@ -12,9 +12,9 @@ export function registerHandlers(bot: Bot): void {
     });
 
     bot.callbackQuery(/^(like|dislike):(\d+)$/, async (ctx) => {
+        await ctx.answerCallbackQuery();
         const match = ctx.match;
         if (!Array.isArray(match)) {
-            await ctx.answerCallbackQuery();
             return;
         }
 
