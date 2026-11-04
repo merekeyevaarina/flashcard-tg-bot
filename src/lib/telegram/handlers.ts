@@ -106,7 +106,90 @@ export function registerHandlers(bot: Bot): void {
             return;
         }
 
-        await ctx.reply("👑 Добро пожаловать в панель администратора!");
+        await ctx.reply("👑 Панель администратора", {
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: "📚 Управление Flashcards",
+                            callback_data: "admin:flashcards",
+                        },
+                    ],
+                    [
+                        {
+                            text: "📝 Управление тестами",
+                            callback_data: "admin:tests",
+                        },
+                    ],
+                ],
+            },
+        });    });
+
+    bot.callbackQuery("admin:flashcards", async (ctx) => {
+        await ctx.answerCallbackQuery();
+
+        await ctx.reply("📚 Управление Flashcards", {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "➕ Добавить вопрос", callback_data: "admin:flashcards:add" }],
+                    [{ text: "📋 Посмотреть вопросы", callback_data: "admin:flashcards:list" }],
+                    [{ text: "⬅️ Назад", callback_data: "admin:back" }],
+                ],
+            },
+        });
+    });
+
+    bot.callbackQuery("admin:tests", async (ctx) => {
+        if (!ctx.from || !(await isAdmin(String(ctx.from.id)))) {
+            await ctx.answerCallbackQuery({
+                text: "⛔ Нет доступа",
+                show_alert: true,
+            });
+            return;
+        }
+
+        await ctx.answerCallbackQuery();
+
+        await ctx.reply("📝 Управление тестами", {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: "➕ Добавить вопрос", callback_data: "admin:tests:add" }],
+                    [{ text: "📋 Посмотреть вопросы", callback_data: "admin:tests:list" }],
+                    [{ text: "⬅️ Назад", callback_data: "admin:back" }],
+                ],
+            },
+        });
+    });
+
+    bot.callbackQuery("admin:back", async (ctx) => {
+        if (!ctx.from || !(await isAdmin(String(ctx.from.id)))) {
+            await ctx.answerCallbackQuery({
+                text: "⛔ Нет доступа",
+                show_alert: true,
+            });
+            return;
+        }
+
+        await ctx.answerCallbackQuery();
+
+        await ctx.reply("👑 Панель администратора", {
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: "📚 Управление Flashcards",
+                            callback_data: "admin:flashcards",
+                        },
+                    ],
+                    [
+                        {
+                            text: "📝 Управление тестами",
+                            callback_data: "admin:tests",
+                        },
+                    ],
+                ],
+            },
+        });
     });
 
     bot.callbackQuery(/^(like|dislike):(\d+)$/, async (ctx) => {
