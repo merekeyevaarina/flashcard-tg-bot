@@ -2,7 +2,7 @@
 import type { Bot, Context } from "grammy";
 
 import {dislikeQuestion, isAdmin, likeQuestion} from "../progress/service";
-import { getQuestionById } from "../questions/service";
+import {addQuestion, getQuestionById} from "../questions/service";
 import { getRandomTestQuestions } from "../questions/test-service";
 
 import {
@@ -18,6 +18,7 @@ import {
     submitTestAnswer,
     finishTest,
 } from "./test-session";
+import {clearAdminSession, getAdminSession, startFlashcardCreation, updateAdminSession} from "./admin-session";
 
 async function sendTestQuestion(
     ctx: Context,
@@ -91,6 +92,7 @@ export function registerHandlers(bot: Bot): void {
     bot.command("start", async (ctx) => {
         await sendModeMenu(ctx);
     });
+
     bot.command("admin", async (ctx) => {
         if (!ctx.from) {
             await ctx.reply("Не удалось определить пользователя.");
@@ -125,6 +127,75 @@ export function registerHandlers(bot: Bot): void {
             },
         });    });
 
+    bot.callbackQuery("admin:flashcards:add", async (ctx) => {
+        if (!ctx.from || !(await isAdmin(String(ctx.from.id)))) {
+            await ctx.answerCallbackQuery({
+                text: "⛔ Нет доступа",
+                show_alert: true,
+            });
+            return;
+        }
+
+        await ctx.answerCallbackQuery();
+
+        startFlashcardCreation(ctx.from.id);
+
+        await ctx.reply("📚 Отправь текст нового вопроса:");
+    });
+
+    bot.on("message:text", async (ctx, next) => {
+        if (!ctx.from) {
+            return;
+        }
+
+        const session = getAdminSession(ctx.from.id);
+
+        if (!session || session.action !== "add_flashcard") {
+            await next();
+            return;
+        }
+
+        const text = ctx.message.text.trim();
+
+        if (session.step === "waiting_question") {
+            if (!text) {
+                await ctx.reply("Вопрос не может быть пустым. Попробуй ещё раз.");
+                return;
+            }
+
+            updateAdminSession(ctx.from.id, {
+                action: "add_flashcard",
+                step: "waiting_answer",
+                question: text,
+            });
+
+            await ctx.reply("✍️ Теперь отправь ответ на вопрос:");
+            return;
+        }
+
+        if (session.step === "waiting_answer") {
+            if (!text) {
+                await ctx.reply("Ответ не может быть пустым. Попробуй ещё раз.");
+                return;
+            }
+
+            try {
+                const question = await addQuestion(
+                    session.question!,
+                    text,
+                );
+
+                clearAdminSession(ctx.from.id);
+
+                await ctx.reply(
+                    `✅ Вопрос успешно добавлен!\n\nID: ${question.id}\nВопрос: ${question.question}`,
+                );
+            } catch (error) {
+                console.error("Ошибка добавления Flashcard:", error);
+                await ctx.reply("Не удалось сохранить вопрос. Попробуй ещё раз.");
+            }
+        }
+    });
     bot.callbackQuery("admin:flashcards", async (ctx) => {
         await ctx.answerCallbackQuery();
 

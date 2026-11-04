@@ -1,5 +1,5 @@
 import { getUserProgress } from "../progress/service";
-import { findAllQuestions, findQuestionById } from "./repository";
+import {createQuestion, findAllQuestions, findQuestionById} from "./repository";
 
 export async function getQuestionById(id: number) {
     return findQuestionById(id);
@@ -42,4 +42,15 @@ export async function selectNextQuestion(
         question,
         isReview: reviewIds.has(question.id),
     };
+}
+
+export async function addQuestion(
+    question: string,
+    answer: string,
+) {
+    if (!question.trim() || !answer.trim()) {
+        throw new Error("Вопрос и ответ не должны быть пустыми");
+    }
+
+    return createQuestion(question.trim(), answer.trim());
 }

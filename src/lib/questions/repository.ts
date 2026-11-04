@@ -13,3 +13,20 @@ export async function findQuestionById(id: number) {
         select: { id: true, question: true, answer: true },
     });
 }
+
+export async function createQuestion(
+    question: string,
+    answer: string,
+) {
+    return prisma.question.create({
+        data: {
+            question,
+            answer,
+        },
+        select: {
+            id: true,
+            question: true,
+            answer: true,
+        },
+    });
+}
