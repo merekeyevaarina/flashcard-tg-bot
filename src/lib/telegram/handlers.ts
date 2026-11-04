@@ -2,7 +2,7 @@
 import type { Bot, Context } from "grammy";
 
 import {dislikeQuestion, isAdmin, likeQuestion} from "../progress/service";
-import {addQuestion, getAllQuestions, getQuestionById} from "../questions/service";
+import {addQuestion, getAllQuestions, getQuestionById, removeQuestion} from "../questions/service";
 import { getRandomTestQuestions } from "../questions/test-service";
 
 import {
@@ -182,6 +182,128 @@ export function registerHandlers(bot: Bot): void {
         }
     });
 
+    bot.callbackQuery("admin:flashcards:delete", async (ctx) => {
+        if (!ctx.from || !(await isAdmin(String(ctx.from.id)))) {
+            await ctx.answerCallbackQuery({
+                text: "⛔ Нет доступа",
+                show_alert: true,
+            });
+            return;
+        }
+
+        await ctx.answerCallbackQuery();
+
+        const questions = await getAllQuestions();
+
+        if (questions.length === 0) {
+            await ctx.reply("Пока нет карточек для удаления.");
+            return;
+        }
+
+        const keyboard = questions.map((question) => [
+            {
+                text: `ID ${question.id}: ${question.question.slice(0, 30)}`,
+                callback_data: `admin:flashcards:delete:select:${question.id}`,
+            },
+        ]);
+
+        await ctx.reply("🗑 Выбери карточку, которую хочешь удалить:", {
+            reply_markup: {
+                inline_keyboard: keyboard,
+            },
+        });
+    });
+
+    bot.callbackQuery(/^admin:flashcards:delete:confirm:/, async (ctx) => {
+        if (!ctx.from || !(await isAdmin(String(ctx.from.id)))) {
+            await ctx.answerCallbackQuery({
+                text: "⛔ Нет доступа",
+                show_alert: true,
+            });
+            return;
+        }
+
+        await ctx.answerCallbackQuery();
+
+        const questionId = Number(ctx.callbackQuery.data.split(":").at(-1));
+
+        if (!Number.isInteger(questionId) || questionId <= 0) {
+            await ctx.reply("Некорректный ID вопроса.");
+            return;
+        }
+
+        try {
+            await removeQuestion(questionId);
+
+            await ctx.reply(`✅ Карточка с ID ${questionId} успешно удалена.`);
+        } catch (error) {
+            console.error("Ошибка удаления карточки:", error);
+            await ctx.reply("Не удалось удалить карточку. Возможно, она уже удалена.");
+        }
+    });
+
+    bot.callbackQuery("admin:flashcards:delete:cancel", async (ctx) => {
+        if (!ctx.from || !(await isAdmin(String(ctx.from.id)))) {
+            await ctx.answerCallbackQuery({
+                text: "⛔ Нет доступа",
+                show_alert: true,
+            });
+            return;
+        }
+
+        await ctx.answerCallbackQuery("Удаление отменено.");
+
+        await ctx.reply("❌ Удаление карточки отменено.");
+    });
+
+    bot.callbackQuery(/^admin:flashcards:delete:select:/, async (ctx) => {
+        if (!ctx.from || !(await isAdmin(String(ctx.from.id)))) {
+            await ctx.answerCallbackQuery({
+                text: "⛔ Нет доступа",
+                show_alert: true,
+            });
+            return;
+        }
+
+        await ctx.answerCallbackQuery();
+
+        const questionId = Number(ctx.callbackQuery.data.split(":").at(-1));
+
+        if (!Number.isInteger(questionId) || questionId <= 0) {
+            await ctx.reply("Некорректный ID вопроса.");
+            return;
+        }
+
+        const question = await getQuestionById(questionId);
+
+        if (!question) {
+            await ctx.reply("Вопрос не найден.");
+            return;
+        }
+
+        await ctx.reply(
+            `⚠️ Ты действительно хочешь удалить эту карточку?\n\nID: ${question.id}\nВопрос: ${question.question}`,
+            {
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: "✅ Да, удалить",
+                                callback_data: `admin:flashcards:delete:confirm:${question.id}`,
+                            },
+                        ],
+                        [
+                            {
+                                text: "❌ Отмена",
+                                callback_data: "admin:flashcards:delete:cancel",
+                            },
+                        ],
+                    ],
+                },
+            },
+        );
+    });
+
     bot.on("message:text", async (ctx, next) => {
         if (!ctx.from) {
             return;
@@ -235,6 +357,7 @@ export function registerHandlers(bot: Bot): void {
             }
         }
     });
+
     bot.callbackQuery("admin:flashcards", async (ctx) => {
         await ctx.answerCallbackQuery();
 
@@ -243,6 +366,7 @@ export function registerHandlers(bot: Bot): void {
                 inline_keyboard: [
                     [{ text: "➕ Добавить вопрос", callback_data: "admin:flashcards:add" }],
                     [{ text: "📋 Посмотреть вопросы", callback_data: "admin:flashcards:list" }],
+                    [{text: "🗑 Удалить вопрос", callback_data: "admin:flashcards:delete" }],
                     [{ text: "⬅️ Назад", callback_data: "admin:back" }],
                 ],
             },

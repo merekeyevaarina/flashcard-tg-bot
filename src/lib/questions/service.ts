@@ -1,5 +1,5 @@
 import { getUserProgress } from "../progress/service";
-import {createQuestion, findAllQuestions, findQuestionById} from "./repository";
+import {createQuestion, deleteQuestionById, findAllQuestions, findQuestionById} from "./repository";
 
 export async function getQuestionById(id: number) {
     return findQuestionById(id);
@@ -57,4 +57,17 @@ export async function addQuestion(
     }
 
     return createQuestion(question.trim(), answer.trim());
+}
+export async function removeQuestion(id: number) {
+    if (!Number.isInteger(id) || id <= 0) {
+        throw new Error("Некорректный ID вопроса");
+    }
+
+    const question = await findQuestionById(id);
+
+    if (!question) {
+        throw new Error("Вопрос не найден");
+    }
+
+    return deleteQuestionById(id);
 }

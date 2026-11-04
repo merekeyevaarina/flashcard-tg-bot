@@ -30,3 +30,10 @@ export async function createQuestion(
         },
     });
 }
+export async function deleteQuestionById(id: number) {
+    return prisma.question.delete({
+        where: {
+            id,
+        },
+    });
+}
