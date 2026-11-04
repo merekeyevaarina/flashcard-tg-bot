@@ -5,6 +5,10 @@ export async function getQuestionById(id: number) {
     return findQuestionById(id);
 }
 
+export async function getAllQuestions() {
+    return findAllQuestions();
+}
+
 export async function selectNextQuestion(
     userId: number,
     excludeQuestionId?: number,

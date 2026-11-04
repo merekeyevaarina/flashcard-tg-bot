@@ -2,7 +2,7 @@
 import type { Bot, Context } from "grammy";
 
 import {dislikeQuestion, isAdmin, likeQuestion} from "../progress/service";
-import {addQuestion, getQuestionById} from "../questions/service";
+import {addQuestion, getAllQuestions, getQuestionById} from "../questions/service";
 import { getRandomTestQuestions } from "../questions/test-service";
 
 import {
@@ -141,6 +141,45 @@ export function registerHandlers(bot: Bot): void {
         startFlashcardCreation(ctx.from.id);
 
         await ctx.reply("📚 Отправь текст нового вопроса:");
+    });
+
+    bot.callbackQuery("admin:flashcards:list", async (ctx) => {
+        if (!ctx.from || !(await isAdmin(String(ctx.from.id)))) {
+            await ctx.answerCallbackQuery({
+                text: "⛔ Нет доступа",
+                show_alert: true,
+            });
+            return;
+        }
+
+        await ctx.answerCallbackQuery();
+
+        try {
+            const questions = await getAllQuestions();
+
+            if (questions.length === 0) {
+                await ctx.reply("Пока нет ни одной карточки.");
+                return;
+            }
+
+            await ctx.reply(`📚 Всего карточек: ${questions.length}`);
+
+            for (let i = 0; i < questions.length; i += 5) {
+                const batch = questions.slice(i, i + 5);
+
+                const message = batch
+                    .map(
+                        (item) =>
+                            `🆔 ID: ${item.id}\n❓ ${item.question}\n💬 ${item.answer}`,
+                    )
+                    .join("\n\n");
+
+                await ctx.reply(message);
+            }
+        } catch (error) {
+            console.error("Ошибка получения Flashcards:", error);
+            await ctx.reply("Не удалось получить список карточек.");
+        }
     });
 
     bot.on("message:text", async (ctx, next) => {
