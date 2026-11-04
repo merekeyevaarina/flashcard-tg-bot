@@ -3,7 +3,7 @@ import {
     deleteQuestionProgress,
     ensureUser,
     findProgressForUser,
-    findQuestionProgressStatus,
+    findQuestionProgressStatus, findUserByTelegramId,
     upsertQuestionProgress,
 } from "./repository";
 
@@ -72,4 +72,12 @@ export async function markQuestionPresentedAgain(
         questionId,
         ProgressStatus.REVIEW,
     );
+}
+
+export async function isAdmin(telegramId: string): Promise<boolean> {
+    await ensureUser(telegramId);
+
+    const user = await findUserByTelegramId(telegramId);
+
+    return user?.role === "ADMIN";
 }

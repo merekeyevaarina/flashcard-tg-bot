@@ -2,10 +2,20 @@ import { ProgressStatus } from "@prisma/client";
 import { prisma } from "../db/prisma";
 
 export async function ensureUser(telegramId: string): Promise<number> {
+    const adminTelegramId = process.env.ADMIN_TELEGRAM_ID;
+
+    const isAdmin = telegramId === adminTelegramId;
+
     const user = await prisma.user.upsert({
         where: { telegramId },
-        create: { telegramId },
-        update: {},
+
+        create: {
+            telegramId,
+            role: isAdmin ? "ADMIN" : "USER",
+        },
+
+        update: isAdmin ? { role: "ADMIN" } : {},
+
         select: { id: true },
     });
 
@@ -50,5 +60,15 @@ export async function deleteQuestionProgress(
 ): Promise<void> {
     await prisma.userQuestion.deleteMany({
         where: { userId, questionId, status },
+    });
+}
+
+export async function findUserByTelegramId(telegramId: string) {
+    return prisma.user.findUnique({
+        where: { telegramId },
+        select: {
+            id: true,
+            role: true,
+        },
     });
 }

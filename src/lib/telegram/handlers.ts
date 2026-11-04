@@ -1,7 +1,7 @@
 
 import type { Bot, Context } from "grammy";
 
-import { dislikeQuestion, likeQuestion } from "../progress/service";
+import {dislikeQuestion, isAdmin, likeQuestion} from "../progress/service";
 import { getQuestionById } from "../questions/service";
 import { getRandomTestQuestions } from "../questions/test-service";
 
@@ -90,6 +90,23 @@ async function sendTestQuestion(
 export function registerHandlers(bot: Bot): void {
     bot.command("start", async (ctx) => {
         await sendModeMenu(ctx);
+    });
+    bot.command("admin", async (ctx) => {
+        if (!ctx.from) {
+            await ctx.reply("Не удалось определить пользователя.");
+            return;
+        }
+
+        const telegramId = String(ctx.from.id);
+
+        const admin = await isAdmin(telegramId);
+
+        if (!admin) {
+            await ctx.reply("⛔ У тебя нет доступа к панели администратора.");
+            return;
+        }
+
+        await ctx.reply("👑 Добро пожаловать в панель администратора!");
     });
 
     bot.callbackQuery(/^(like|dislike):(\d+)$/, async (ctx) => {
@@ -215,3 +232,5 @@ export function registerHandlers(bot: Bot): void {
         await sendTestQuestion(ctx, userId);
     });
 }
+
+

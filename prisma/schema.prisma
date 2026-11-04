@@ -12,10 +12,16 @@ enum ProgressStatus {
   REVIEW
 }
 
+enum UserRole {
+  ADMIN
+  USER
+}
+
 model User {
   id            Int            @id @default(autoincrement())
   telegramId    String         @unique @map("telegram_id")
   createdAt     DateTime       @default(now()) @map("created_at")
+  role UserRole @default(USER)
   userQuestions UserQuestion[]
 
   @@map("users")
