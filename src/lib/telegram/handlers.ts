@@ -89,6 +89,7 @@ async function sendTestQuestion(
 }
 
 export function registerHandlers(bot: Bot): void {
+
     bot.command("start", async (ctx) => {
         await sendModeMenu(ctx);
     });
@@ -176,6 +177,11 @@ export function registerHandlers(bot: Bot): void {
 
                 await ctx.reply(message);
             }
+            console.log(
+                "LIST HANDLER",
+                ctx.update.update_id,
+                ctx.callbackQuery.id,
+            );
         } catch (error) {
             console.error("Ошибка получения Flashcards:", error);
             await ctx.reply("Не удалось получить список карточек.");
